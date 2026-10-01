@@ -1,0 +1,1 @@
+Ms Syeda Tuition — Supabase central question bank connected. The question images are packaged under /question-bank and metadata is loaded from Supabase.
