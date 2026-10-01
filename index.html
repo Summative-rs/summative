@@ -244,7 +244,7 @@ async function syncCentralQuestionBank(){
     const rows=await res.json();
     const central=rows.map(r=>({
       id:r.question_code,
-      day:0,
+      day:Number(r.day_number||0),
       subject:(r.subject||'NVR').toLowerCase(),
       text:r.question_text||'',
       image:r.image_path||'',
@@ -399,41 +399,24 @@ imagePreview.classList.add('hidden');
 qImage.value='';
 pasteZone.innerHTML='<strong>Paste a screenshot here with Ctrl+V</strong><div class="small" style="margin-top:5px">or upload an image file below</div>';
 }
-function saveQuestion(){const day=+qDay.value,subject=qSubject.value,text=qText.value.trim(),options=[optA.value.trim(),optB.value.trim(),optC.value.trim(),optD.value.trim(),optE.value.trim()].filter((x,i)=>i<4||x),correct=+document.getElementById('correct').value,explanation=document.getElementById('explanation').value.trim();if(day<1||day>30){alert('Day must be 1–30.');return}if(options.slice(0,4).some(x=>!x)){alert('Fill at least options A–D.');return}const id=editId.value||('q-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)),old=bank.find(q=>q.id===id),image=pendingImage||(old?old.image:'');const obj={id,day,subject,text,image,options,correct,explanation},idx=bank.findIndex(q=>q.id===id);if(idx>=0)bank[idx]=obj;else bank.push(obj);saveBank();resetForm();renderQuestionManager();renderDays();refreshJSONPreview();alert('Question saved.')}
-function editQuestion(id){const q=bank.find(x=>x.id===id);if(!q)return;editId.value=q.id;qDay.value=q.day;qSubject.value=q.subject;qText.value=q.text||'';[optA,optB,optC,optD,optE].forEach((el,i)=>el.value=q.options[i]||'');document.getElementById('correct').value=q.correct;document.getElementById('explanation').value=q.explanation||'';pendingImage=q.image||'';if(pendingImage){imagePreview.src=pendingImage;imagePreview.classList.remove('hidden')}else imagePreview.classList.add('hidden')}
+async function saveQuestion(){const day=+qDay.value,subject=qSubject.value,text=qText.value.trim(),topic=qTopic.value.trim(),subtopic=qSubtopic.value.trim(),difficulty=qDifficulty.value,options=[optA.value.trim(),optB.value.trim(),optC.value.trim(),optD.value.trim(),optE.value.trim()].filter((x,i)=>i<4||x),correct=+document.getElementById('correct').value,explanation=document.getElementById('explanation').value.trim();if(day<1||day>30){alert('Day must be 1–30.');return}if(options.slice(0,4).some(x=>!x)){alert('Fill at least options A–D.');return}const id=editId.value||('q-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)),old=bank.find(q=>q.id===id),image=pendingImage||(old?old.image:'');const obj={...(old||{}),id,day,subject,text,image,options,correct,explanation,topic,subtopic,difficulty};const idx=bank.findIndex(q=>q.id===id);if(idx>=0)bank[idx]=obj;else bank.push(obj);if(obj.central)await fetch(SUPABASE_URL+'/rest/v1/question_bank?question_code=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{...SB_HEADERS,'Content-Type':'application/json'},body:JSON.stringify({day_number:day,category:topic,subcategory:subtopic,difficulty:difficulty,status:obj.status||'draft'})});saveBank();resetForm();renderQuestionManager();renderDays();refreshJSONPreview();alert('Question saved.')}
+function editQuestion(id){const q=bank.find(x=>x.id===id);if(!q)return;editId.value=q.id;qDay.value=q.day||1;qSubject.value=q.subject;qTopic.value=q.topic||'';qSubtopic.value=q.subtopic||'';qDifficulty.value=q.difficulty||'Medium';qText.value=q.text||'';[optA,optB,optC,optD,optE].forEach((el,i)=>el.value=q.options[i]||'');document.getElementById('correct').value=q.correct||0;document.getElementById('explanation').value=q.explanation||'';pendingImage=q.image||'';if(pendingImage){imagePreview.src=pendingImage;imagePreview.classList.remove('hidden')}else imagePreview.classList.add('hidden')}
 function deleteQuestion(id){if(!confirm('Delete this question?'))return;bank=bank.filter(q=>q.id!==id);saveBank();renderQuestionManager();renderDays();refreshJSONPreview()}
-function resetForm(){editId.value='';qDay.value=1;qSubject.value='nvr';qText.value='';[optA,optB,optC,optD,optE].forEach(x=>x.value='');document.getElementById('correct').value=0;document.getElementById('explanation').value='';clearImage()}
+function resetForm(){editId.value='';qDay.value=1;qSubject.value='nvr';qTopic.value='';qSubtopic.value='';qDifficulty.value='Medium';qText.value='';[optA,optB,optC,optD,optE].forEach(x=>x.value='');document.getElementById('correct').value=0;document.getElementById('explanation').value='';clearImage()}
 function populateFilterDays(){filterDay.innerHTML='<option value="all">All days</option>'+Array.from({length:30},(_,i)=>`<option value="${i+1}">Day ${i+1}</option>`).join('')}
 function renderQuestionManager(){
-  const fd=filterDay.value, fs=filterSubject.value;
-  const rows=bank.filter(q=>(fd==='all'||q.day===+fd)&&(fs==='all'||q.subject===fs));
-  rows.sort((a,b)=>{
-    const ac=(a.topic||'General').localeCompare(b.topic||'General');
-    if(ac)return ac;
-    const as=(a.subtopic||'General').localeCompare(b.subtopic||'General');
-    if(as)return as;
-    return String(a.id||'').localeCompare(String(b.id||''));
-  });
-  if(!rows.length){questionManager.innerHTML='<div class="small" style="margin-top:10px">No matching questions.</div>';return}
-  const groups={};
-  rows.forEach(q=>{const topic=q.topic||'General';const sub=q.subtopic||'General';groups[topic]??={};groups[topic][sub]??=[];groups[topic][sub].push(q)});
-  questionManager.innerHTML=Object.entries(groups).map(([topic,subs])=>{
-    const topicCount=Object.values(subs).reduce((n,arr)=>n+arr.length,0);
-    return `<details open class="card" style="margin-top:12px;padding:14px">
-      <summary style="cursor:pointer"><strong>${esc(topic)}</strong> <span class="small">(${topicCount} question${topicCount===1?'':'s'})</span></summary>
-      ${Object.entries(subs).map(([sub,qs])=>`<div style="margin:12px 0 0 10px">
-        <h4 style="margin:0 0 8px">${esc(sub)} <span class="small">(${qs.length})</span></h4>
-        ${qs.map(q=>`<div class="question-admin">
-          <strong>${q.id&&String(q.id).startsWith('NVR-')?esc(q.id):`Day ${q.day} • ${esc((q.subject||'').toUpperCase())}`}</strong>
-          <div class="small" style="margin-top:4px">${esc(q.text||'(image question)')}</div>
-          ${q.image?`<img src="${q.image}" class="preview">`:''}
-          <div class="small" style="margin-top:5px">Difficulty: ${esc(q.difficulty||'Needs review')} · Status: ${esc(q.status||'draft')}</div>
-          <div class="flex" style="margin-top:8px"><button class="secondary" onclick="editQuestion('${q.id}')">Edit</button><button class="warn" onclick="deleteQuestion('${q.id}')">Delete</button></div>
-        </div>`).join('')}
-      </div>`).join('')}
-    </details>`;
-  }).join('');
+const fd=filterDay.value,fs=filterSubject.value,ft=window.qTopicFilter||'all',fsub=window.qSubtopicFilter||'all';
+const rows=bank.filter(q=>(fd==='all'||q.day===+fd)&&(fs==='all'||q.subject===fs)&&(ft==='all'||(q.topic||'General')===ft)&&(fsub==='all'||(q.subtopic||'General')===fsub));
+const allRows=bank.filter(q=>(fd==='all'||q.day===+fd)&&(fs==='all'||q.subject===fs));
+const topics=[...new Set(allRows.map(q=>q.topic||'General'))].sort();
+const subs=[...new Set(allRows.filter(q=>ft==='all'||(q.topic||'General')===ft).map(q=>q.subtopic||'General'))].sort();
+const controls='<div class="flex" style="margin-top:10px;flex-wrap:wrap"><select id="topicFilter" onchange="window.qTopicFilter=this.value;window.qSubtopicFilter=\'all\';renderQuestionManager()"><option value="all">All topics</option>'+topics.map(x=>'<option value="'+esc(x)+'" '+(ft===x?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select><select id="subtopicFilter" onchange="window.qSubtopicFilter=this.value;renderQuestionManager()"><option value="all">All subtopics</option>'+subs.map(x=>'<option value="'+esc(x)+'" '+(fsub===x?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select><button class="secondary" onclick="selectVisibleQuestions(true)">Select visible</button><button class="secondary" onclick="selectVisibleQuestions(false)">Clear selection</button><select id="assignDay">'+Array.from({length:30},(_,i)=>'<option value="'+(i+1)+'">Day '+(i+1)+'</option>').join('')+'</select><button class="primary" onclick="assignSelectedToDay()">Assign selected to day</button></div>';
+if(!rows.length){questionManager.innerHTML=controls+'<div class="small" style="margin-top:10px">No matching questions.</div>';return}
+const groups={};rows.forEach(q=>{const t=q.topic||'General',sub=q.subtopic||'General';groups[t]??={};groups[t][sub]??=[];groups[t][sub].push(q)});
+questionManager.innerHTML=controls+Object.entries(groups).map(([topic,ss])=>'<details open class="card" style="margin-top:12px;padding:14px"><summary><strong>'+esc(topic)+'</strong></summary>'+Object.entries(ss).map(([sub,qs])=>'<div style="margin:12px 0 0 10px"><h4>'+esc(sub)+' <span class="small">('+qs.length+')</span></h4>'+qs.map(q=>'<div class="question-admin"><label style="display:flex;gap:10px"><input type="checkbox" class="qSelect" value="'+esc(q.id)+'"><span><strong>'+esc(q.id)+'</strong><div class="small">'+esc(q.text||'(image question)')+'</div>'+(q.image?'<img src="'+q.image+'" class="preview">':'')+'<div class="small">Assigned: '+(q.day?'Day '+q.day:'Unassigned')+' · '+esc(q.difficulty||'Needs review')+' · '+esc(q.status||'draft')+'</div></span></label><div class="flex"><button class="secondary" onclick="editQuestion(\''+q.id+'\')">Edit</button><button class="warn" onclick="deleteQuestion(\''+q.id+'\')">Delete</button></div></div>').join('')+'</div>').join('')+'</details>').join('')
 }
+function selectVisibleQuestions(checked){document.querySelectorAll('#questionManager .qSelect').forEach(x=>x.checked=checked)}
+async function assignSelectedToDay(){const ids=[...document.querySelectorAll('#questionManager .qSelect:checked')].map(x=>x.value),day=+document.getElementById('assignDay').value;if(!ids.length){alert('Select at least one question first.');return}for(const id of ids){const q=bank.find(x=>x.id===id);if(!q)continue;q.day=day;if(q.central)await fetch(SUPABASE_URL+'/rest/v1/question_bank?question_code=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{...SB_HEADERS,'Content-Type':'application/json'},body:JSON.stringify({day_number:day})})}saveBank();renderQuestionManager();renderDays();refreshJSONPreview();alert(ids.length+' question(s) assigned to Day '+day+'.')}
 function unlockSelectedDay(){const d=+unlockDay.value;if(d<1||d>30)return;const u=getUnlocked();if(!u.includes(d))u.push(d);setUnlocked(u);renderDays()} function lockSelectedDay(){const d=+unlockDay.value;if(d===1){alert('Day 1 stays unlocked.');return}setUnlocked(getUnlocked().filter(x=>x!==d));renderDays()}
 async function renderResults(){
   resultsTable.innerHTML='<div class="small">Loading student papers…</div>';
