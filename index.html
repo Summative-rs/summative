@@ -76,8 +76,8 @@ button{border:0;border-radius:11px;padding:10px 13px;font-weight:800;cursor:poin
 <main class="wrap">
 <section class="card" id="loginCard"><h2>Welcome 👋</h2><p>Enter your name to start today’s practice.</p><div class="flex"><input id="studentName" placeholder="Student name" style="max-width:360px"><button class="primary" onclick="enterStudent()">Start</button><button class="secondary teacher-access" onclick="requestTeacherAccess()">🔒 Teacher</button></div></section>
 <section class="card hidden" id="studentHome"><div class="flex" style="justify-content:space-between"><div><h2 style="margin:0">Hello, <span id="helloName"></span> 👋</h2><div class="small">Choose an unlocked day.</div></div><button class="secondary" onclick="changeStudent()">Change Student</button></div></section>
-<section class="card hidden" id="studentDashboard"><div class="dashGrid"><div class="stat"><div class="small">Overall</div><strong id="dashOverall">—</strong></div><div class="stat"><div class="small">Questions</div><strong id="dashQuestions">0</strong></div><div class="stat"><div class="small">Tests</div><strong id="dashTests">0</strong></div><div class="stat"><div class="small">Streak</div><strong id="dashStreak">🔥 0</strong></div></div><div class="quickGrid"><button class="featureCard" onclick="openNvrCodeLab()"><span>🔎</span><b>NVR Code Lab Questions</b><small>41 picture codes · subtopic filters · Difficult set</small></button><button class="featureCard" onclick="openPracticeBrowser('nvr')"><span>🧩</span><b>NVR Practice</b><small>All NVR questions · choose a subtopic</small></button><button class="featureCard" onclick="openPracticeBrowser('maths')"><span>📐</span><b>Maths Practice</b><small>All Maths questions · choose a subtopic</small></button><button class="featureCard" onclick="openAdaptive()"><span>🧠</span><b>Adaptive Practice</b><small>Targets your weaker areas automatically</small></button><button class="featureCard" onclick="openProgress()"><span>📈</span><b>My Progress</b><small>See your performance</small></button><button class="featureCard" onclick="openMock()"><span>📝</span><b>Weekly Mock</b><small>40-question mixed paper</small></button><button class="featureCard" onclick="openAchievements()"><span>🏅</span><b>Achievements</b><small>Milestones and streaks</small></button></div></section>
-<section class="card hidden" id="nvrCodeLabCard"><div class="flex" style="justify-content:space-between;margin-bottom:14px"><h2 style="margin:0">NVR Code Lab Questions</h2><button class="secondary" onclick="closeFeatureCards()">← Back</button></div><iframe id="nvrCodeLabFrame" title="NVR Code Lab Questions — 11+ coding practice" style="display:block;width:100%;height:960px;border:1px solid var(--line);border-radius:14px;background:#eef2f7" loading="lazy"></iframe></section>
+<section class="card hidden" id="studentDashboard"><div class="dashGrid"><div class="stat"><div class="small">Overall</div><strong id="dashOverall">—</strong></div><div class="stat"><div class="small">Questions</div><strong id="dashQuestions">0</strong></div><div class="stat"><div class="small">Tests</div><strong id="dashTests">0</strong></div><div class="stat"><div class="small">Streak</div><strong id="dashStreak">🔥 0</strong></div></div><div class="quickGrid"><button class="featureCard" onclick="openPracticeBrowser('nvr')"><span>🧩</span><b>NVR Practice</b><small>All NVR questions · choose a subtopic</small></button><button class="featureCard" onclick="openPracticeBrowser('maths')"><span>📐</span><b>Maths Practice</b><small>All Maths questions · choose a subtopic</small></button><button class="featureCard" onclick="openAdaptive()"><span>🧠</span><b>Adaptive Practice</b><small>Targets your weaker areas automatically</small></button><button class="featureCard" onclick="openProgress()"><span>📈</span><b>My Progress</b><small>See your performance</small></button><button class="featureCard" onclick="openMock()"><span>📝</span><b>Weekly Mock</b><small>40-question mixed paper</small></button><button class="featureCard" onclick="openAchievements()"><span>🏅</span><b>Achievements</b><small>Milestones and streaks</small></button></div></section>
+
 <section class="card hidden" id="practiceBrowserCard"><div class="flex" style="justify-content:space-between"><div><h2 id="practiceBrowserTitle" style="margin:0">Practice</h2><div class="small">Choose a subtopic to practise specific questions.</div></div><button class="secondary" onclick="closeFeatureCards()">← Back</button></div><div id="practiceBrowserTopics" class="featurePanel"></div><button class="primary" onclick="startSelectedPractice()">Start selected questions</button></section>
 <section class="card hidden" id="adaptiveCard"><div class="flex" style="justify-content:space-between"><div><h2 style="margin:0">🧠 Adaptive Practice</h2><div class="small">Separate from the Day system. Choose what you want to practise, then adaptive mode targets the areas you need most.</div></div><button class="secondary" onclick="closeFeatureCards()">← Back</button></div><div class="card" style="box-shadow:none;margin:14px 0 0;padding:0"><h3 style="margin-bottom:8px">1. Choose subject</h3><div id="adaptiveSubjects" class="subjects"></div><h3 style="margin:18px 0 8px">2. Choose topics</h3><div class="small">Pick one, several, or <b>All topics</b>.</div><div id="adaptiveTopics" class="featurePanel" style="margin-top:8px"></div></div><div id="adaptiveSummary" class="featurePanel"></div><button class="primary" onclick="startAdaptiveSet()">Start Adaptive Practice</button></section>
 <section class="card hidden" id="progressCard"><div class="flex" style="justify-content:space-between"><div><h2 style="margin:0">📈 My Progress</h2></div><button class="secondary" onclick="closeFeatureCards()">← Back</button></div><div id="progressContent"></div></section>
@@ -91,8 +91,9 @@ button{border:0;border-radius:11px;padding:10px 13px;font-weight:800;cursor:poin
 <section class="card teacher hidden" id="teacherCard">
 <div class="flex" style="justify-content:space-between"><div><h2 style="margin:0">Teacher Dashboard</h2><div class="small">Manage content, days, and student results.</div></div><div class="flex"><button class="secondary" onclick="closeTeacher()">Close</button><button class="warn" onclick="lockTeacher()">Lock Teacher View</button></div></div>
 <div class="notice" style="margin:14px 0">Student scores and question-by-question answers are saved online. Teacher Results lets you open each paper and see the wrong questions.</div><div class="small" style="margin:10px 0">☁️ Central question bank connected: questions in Supabase appear here automatically. New questions can be added later without rebuilding the database.</div>
-<div class="adminTabs"><button class="tabbtn active" id="tabContent" onclick="showAdminTab('content')">Question Manager</button><button class="tabbtn secondary" id="tabResults" onclick="showAdminTab('results')">Student Results</button><button class="tabbtn secondary" id="tabBulk" onclick="showAdminTab('bulk')">Bulk Image Import</button><button class="tabbtn secondary" id="tabData" onclick="showAdminTab('data')">Backup / Restore</button></div>
+<div class="adminTabs"><button class="tabbtn active" id="tabContent" onclick="showAdminTab('content')">Question Manager</button><button class="tabbtn secondary" id="tabResults" onclick="showAdminTab('results')">Student Results</button><button class="tabbtn secondary" id="tabNvrLab" onclick="showAdminTab('nvrlab')">NVR Code Lab</button><button class="tabbtn secondary" id="tabBulk" onclick="showAdminTab('bulk')">Bulk Image Import</button><button class="tabbtn secondary" id="tabData" onclick="showAdminTab('data')">Backup / Restore</button></div>
 
+<div id="adminNvrLab" class="hidden"><div class="flex" style="justify-content:space-between"><div><h3 style="margin:0">NVR Code Lab</h3><div class="small">Teacher-only coding question workspace.</div></div></div><iframe id="teacherNvrCodeLabFrame" title="Teacher NVR Code Lab" style="display:block;width:100%;height:960px;border:1px solid var(--line);border-radius:14px;background:#eef2f7;margin-top:14px" loading="lazy"></iframe></div>
 <div id="adminContent"><div class="grid2">
 <div class="card" style="box-shadow:none;margin:0">
 <h3>Add / Edit Question</h3><input type="hidden" id="editId">
@@ -366,11 +367,16 @@ function showAdminTab(w){
   adminResults.classList.toggle('hidden',w!=='results');
   adminBulk.classList.toggle('hidden',w!=='bulk');
   adminData.classList.toggle('hidden',w!=='data');
+  adminNvrLab.classList.toggle('hidden',w!=='nvrlab');
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
-  const id=w==='content'?'tabContent':w==='results'?'tabResults':w==='bulk'?'tabBulk':'tabData';
+  const id=w==='content'?'tabContent':w==='results'?'tabResults':w==='nvrlab'?'tabNvrLab':w==='bulk'?'tabBulk':'tabData';
   document.getElementById(id).classList.add('active');
   if(w==='results')renderResults();
   if(w==='data')refreshJSONPreview();
+  if(w==='nvrlab'){
+    const frame=document.getElementById('teacherNvrCodeLabFrame');
+    if(!frame.getAttribute('src')) frame.src='nvr-code-lab.html';
+  }
 }
 qImage.addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{pendingImage=ev.target.result;imagePreview.src=pendingImage;imagePreview.classList.remove('hidden')};r.readAsDataURL(f)})
 document.getElementById('pasteZone').addEventListener('paste',e=>{
@@ -656,23 +662,7 @@ document.addEventListener('click',e=>{const img=e.target.closest('.qimg');if(img
 /* ===== MS SYEDA TUITION PLATFORM UPGRADE ===== */
 let testStartedAt=0, featureMockQuestions=[], featureMode='';
 const featureCards=['adaptiveCard','progressCard','mockCard','achievementCard','practiceBrowserCard','nvrCodeLabCard'];
-function openNvrCodeLab(){
-  featureCards.forEach(id=>document.getElementById(id)?.classList.add('hidden'));
-  ['studentDashboard','daysCard','dayPanel','testCard'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
-  document.getElementById('nvrCodeLabCard').classList.remove('hidden');
-  const frame=document.getElementById('nvrCodeLabFrame');
-  if(!frame.getAttribute('src')){
-    frame.onload=()=>{
-      try{
-        const body=frame.contentDocument.body;
-        const resize=()=>{frame.style.height=Math.max(650,Math.ceil(body.getBoundingClientRect().height)+24)+'px'};
-        resize();
-        if(window.ResizeObserver){const observer=new ResizeObserver(resize);observer.observe(body);frame._sizeObserver=observer;}
-      }catch(e){frame.style.height='1200px';}
-    };
-    frame.src='nvr-code-lab.html';
-  }
-}
+function openNvrCodeLab(){openTeacher()}
 
 function closeFeatureCards(){featureCards.forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('daysCard')?.classList.remove('hidden');document.getElementById('studentDashboard')?.classList.remove('hidden')}
 async function enterStudent(){const n=document.getElementById('studentName').value.trim();if(!n){alert('Please enter a student name.');return}currentStudent=n;localStorage.setItem(KEY_CURRENT,n);loginCard.classList.add('hidden');studentHome.classList.remove('hidden');studentDashboard.classList.remove('hidden');daysCard.classList.remove('hidden');leaderCard.classList.remove('hidden');helloName.textContent=n;renderDays();await refreshStudentDashboard()}
