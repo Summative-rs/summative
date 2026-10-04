@@ -93,7 +93,7 @@ button{border:0;border-radius:11px;padding:10px 13px;font-weight:800;cursor:poin
 <div class="notice" style="margin:14px 0">Student scores and question-by-question answers are saved online. Teacher Results lets you open each paper and see the wrong questions.</div><div class="small" style="margin:10px 0">☁️ Central question bank connected: questions in Supabase appear here automatically. New questions can be added later without rebuilding the database.</div>
 <div class="adminTabs"><button class="tabbtn active" id="tabContent" onclick="showAdminTab('content')">Question Manager</button><button class="tabbtn secondary" id="tabResults" onclick="showAdminTab('results')">Student Results</button><button class="tabbtn secondary" id="tabNvrLab" onclick="showAdminTab('nvrlab')">NVR Code Lab</button><button class="tabbtn secondary" id="tabBulk" onclick="showAdminTab('bulk')">Bulk Image Import</button><button class="tabbtn secondary" id="tabData" onclick="showAdminTab('data')">Backup / Restore</button></div>
 
-<div id="adminNvrLab" class="hidden"><div class="flex" style="justify-content:space-between"><div><h3 style="margin:0">NVR Code Lab</h3><div class="small">Teacher-only coding question workspace.</div></div></div><iframe id="teacherNvrCodeLabFrame" title="Teacher NVR Code Lab" style="display:block;width:100%;height:960px;border:1px solid var(--line);border-radius:14px;background:#eef2f7;margin-top:14px" loading="lazy"></iframe></div>
+<div id="adminNvrLab" class="hidden"><div class="flex" style="justify-content:space-between"><div><h3 style="margin:0">NVR Code Lab — Question Bank</h3><div class="small">These are individual coding questions. Add any question to any Day without retyping it.</div></div></div><div id="codeLabQuestionManager" class="featurePanel" style="margin-top:14px"></div><iframe id="teacherNvrCodeLabFrame" title="Teacher NVR Code Lab" style="display:block;width:100%;height:960px;border:1px solid var(--line);border-radius:14px;background:#eef2f7;margin-top:14px" loading="lazy"></iframe></div>
 <div id="adminContent"><div class="grid2">
 <div class="card" style="box-shadow:none;margin:0">
 <h3>Add / Edit Question</h3><input type="hidden" id="editId">
@@ -374,6 +374,7 @@ function showAdminTab(w){
   if(w==='results')renderResults();
   if(w==='data')refreshJSONPreview();
   if(w==='nvrlab'){
+    renderCodeLabQuestionManager();
     const frame=document.getElementById('teacherNvrCodeLabFrame');
     if(!frame.getAttribute('src')) frame.src='nvr-code-lab.html';
   }
@@ -662,7 +663,20 @@ document.addEventListener('click',e=>{const img=e.target.closest('.qimg');if(img
 /* ===== MS SYEDA TUITION PLATFORM UPGRADE ===== */
 let testStartedAt=0, featureMockQuestions=[], featureMode='';
 const featureCards=['adaptiveCard','progressCard','mockCard','achievementCard','practiceBrowserCard','nvrCodeLabCard'];
-function openNvrCodeLab(){openTeacher()}
+async function renderCodeLabQuestionManager(){
+  const host=document.getElementById('codeLabQuestionManager'); if(!host)return;
+  try{
+    const res=await fetch(SUPABASE_URL+'/rest/v1/nvr_code_lab_questions?select=*&order=question_code',{headers:SB_HEADERS});
+    const rows=await res.json();
+    host.innerHTML='<div class="flex" style="margin-bottom:12px"><select id="clFilter"><option value="all">All 41 questions</option><option value="unassigned">Unassigned</option><option value="assigned">Assigned to a day</option><option value="hard">Hard</option></select><select id="clDay">'+Array.from({length:30},(_,i)=>'<option value="'+(i+1)+'">Add to Day '+(i+1)+'</option>').join('')+'</select></div><div id="clRows"></div>';
+    const draw=()=>{const f=document.getElementById('clFilter').value,day=+document.getElementById('clDay').value;const rr=rows.filter(q=>f==='all'||(f==='unassigned'?q.day_number===0:f==='assigned'?q.day_number>0:f==='hard'?q.difficulty==='Hard':true));document.getElementById('clRows').innerHTML=rr.map(q=>'<div class="question-admin" style="margin:8px 0;padding:12px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><strong>'+esc(q.question_code)+'</strong><div class="small">NVR Coding · '+esc(q.subcategory)+' · '+esc(q.difficulty)+' · '+(q.day_number?'Currently Day '+q.day_number:'Unassigned')+'</div></div><button class="primary" onclick="assignCodeLabQuestion(\''+q.question_code+'\', '+day+')">'+(q.day_number===day?'✓ In Day '+day:'Add to Day '+day)+'</button></div></div>').join('')||'<div class="small">No questions match.</div>'};
+    document.getElementById('clFilter').onchange=draw;document.getElementById('clDay').onchange=draw;draw();
+  }catch(e){host.innerHTML='<div class="small">Could not load the Code Lab question bank.</div>';}
+}
+async function assignCodeLabQuestion(code,day){
+  await fetch(SUPABASE_URL+'/rest/v1/nvr_code_lab_questions?question_code=eq.'+encodeURIComponent(code),{method:'PATCH',headers:{...SB_HEADERS,'Content-Type':'application/json'},body:JSON.stringify({day_number:day})});
+  renderCodeLabQuestionManager();
+}function openNvrCodeLab(){openTeacher()}
 
 function closeFeatureCards(){featureCards.forEach(id=>document.getElementById(id)?.classList.add('hidden'));document.getElementById('daysCard')?.classList.remove('hidden');document.getElementById('studentDashboard')?.classList.remove('hidden')}
 async function enterStudent(){const n=document.getElementById('studentName').value.trim();if(!n){alert('Please enter a student name.');return}currentStudent=n;localStorage.setItem(KEY_CURRENT,n);loginCard.classList.add('hidden');studentHome.classList.remove('hidden');studentDashboard.classList.remove('hidden');daysCard.classList.remove('hidden');leaderCard.classList.remove('hidden');helloName.textContent=n;renderDays();await refreshStudentDashboard()}
